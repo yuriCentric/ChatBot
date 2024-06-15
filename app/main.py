@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLineEdit, QTextEdit, QPushButton
-from chat_bot import get_response
+from chat_bot import process_input
 
 class ChatbotApp(QWidget):
     def __init__(self):
@@ -29,7 +29,7 @@ class ChatbotApp(QWidget):
         user_input = self.input_box.text()
         if user_input:
             self.chat_display.append(f"You: {user_input}")
-            response = get_response(user_input)
+            response = process_input(user_input)
             self.chat_display.append(f"Chatbot: {response}")
             self.input_box.clear()
 
