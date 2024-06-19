@@ -1,7 +1,7 @@
 # how to setup:
 
 python -m venv nv
-source env/bin/activate # On Windows, use `chatbot_env\Scripts\activate`
+source env/bin/activate # On Windows, use `env\Scripts\activate`
 
 pip install spacy
 pip install pyqt5

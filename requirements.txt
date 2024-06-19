@@ -1,2 +1,3 @@
 spacy
 pyqt5
+pandas
