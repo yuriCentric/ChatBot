@@ -1,10 +1,13 @@
 # how to setup:
 
+cd ChatBot
 python -m venv nv
 source env/bin/activate # On Windows, use `env\Scripts\activate`
 
 pip install spacy
 pip install pyqt5
+pip install pandas
+pip install openpyxl
 
 python -m spacy download en_core_web_sm
 
@@ -16,5 +19,5 @@ pip install -r requirements.txt
 
 # how to run:
 
-cd app
+cd ChatBot/app
 python main.py
