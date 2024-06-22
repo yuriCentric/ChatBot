@@ -3,6 +3,7 @@ from Rules.rules import get_response
 
 # Load spaCy's English language model
 nlp = spacy.load('en_core_web_sm')
+# nlp = spacy.load('/Training/chatbot_model')
 
 def process_input(user_input):
     # Process the user input with spaCy
