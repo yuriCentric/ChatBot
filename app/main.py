@@ -1,6 +1,6 @@
 import sys
 import getpass
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QTextEdit, QPushButton, QLabel, QSpacerItem, QSizePolicy
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QTextEdit, QPushButton, QLabel, QSpacerItem, QSizePolicy, QDesktopWidget
 from PyQt5.QtGui import QFont, QIcon, QMovie
 from PyQt5.QtCore import Qt, pyqtSignal
 
@@ -21,20 +21,24 @@ class ChatbotApp(QWidget):
 
         # Set up the user interface
         self.setWindowTitle(f'Welcome to Centric, {username}')
-        self.setGeometry(100, 100, 500, 600)
-        self.setWindowIcon(QIcon('chat_icon.png'))  # Set an icon for the window (ensure you have an icon named chat_icon.png)
+        self.resize(500, 600)
+        self.setWindowIcon(QIcon('C:/Users/sagar.patel/OneDrive - Centric Consulting/Documents/GitHub/ChatBot/icons/your_gif.gif'))  # Set an icon for the window
+
+        # Position the window at the bottom right corner
+        self.move_to_bottom_right()
+
         self.layout = QVBoxLayout()
         self.title = QLabel('Your Centric ChatBot')
         self.title.setAlignment(Qt.AlignCenter)
         self.title.setFont(QFont('Arial', 24, QFont.Bold))
-        self.title.setStyleSheet("color: #fdb825; margin-bottom: 20px;")
+        self.title.setStyleSheet("color: #2c1a5d; margin-bottom: 20px;")
         self.layout.addWidget(self.title)
         self.chat_display = QTextEdit(self)
         self.chat_display.setReadOnly(True)
         self.chat_display.setStyleSheet("""
-            color: #fdb825; 
-            background-color: #2c1a5d;
-            border: 1px solid #fdb825;
+            color: black; 
+            background-color: white;
+            border: 1px solid #2c1a5d;
             padding: 5px;
             border-radius: 5px;
             font-family: Arial;
@@ -48,9 +52,9 @@ class ChatbotApp(QWidget):
         self.input_box = QLineEdit(self)
         self.input_box.setPlaceholderText("Type your message here...")
         self.input_box.setStyleSheet("""
-            color: #2c1a5d; 
+            color: black; 
             background-color: white;
-            border: 1px solid #fdb825;
+            border: 1px solid #2c1a5d;
             padding: 15px;
             border-radius: 15px;
             font-family: Arial;
@@ -66,8 +70,8 @@ class ChatbotApp(QWidget):
         self.send_button.clicked.connect(self.send_message)
         self.send_button.setIcon(QIcon('send_icon.png'))  # Ensure you have an icon named send_icon.png
         self.send_button.setStyleSheet("""
-            background-color: #fdb825; 
-            color: #2c1a5d; 
+            background-color: #2c1a5d; 
+            color: white; 
             font-size: 14px; 
             border: none; 
             padding: 10px 20px; 
@@ -80,8 +84,8 @@ class ChatbotApp(QWidget):
         self.clear_button.clicked.connect(self.clear_chat)
         self.clear_button.setIcon(QIcon('clear_icon.png'))  # Ensure you have an icon named clear_icon.png
         self.clear_button.setStyleSheet("""
-            background-color: #fdb825; 
-            color: #2c1a5d; 
+            background-color: #2c1a5d; 
+            color: white; 
             font-size: 14px; 
             border: none; 
             padding: 10px 20px; 
@@ -94,6 +98,10 @@ class ChatbotApp(QWidget):
         self.layout.addLayout(self.input_layout)
 
         self.setLayout(self.layout)
+
+    def move_to_bottom_right(self):
+        screen_geometry = QDesktopWidget().availableGeometry()
+        self.move(screen_geometry.width() - self.width(), screen_geometry.height() - self.height())
 
     def send_message(self):
         user_input = self.input_box.text()
@@ -128,7 +136,7 @@ class MainApp(QWidget):
         self.gif = QMovie(r'C:/Users/sagar.patel/OneDrive - Centric Consulting/Documents/GitHub/ChatBot/icons/your_gif.gif')  # Ensure you have a GIF named your_gif.gif
         self.gif_label.setMovie(self.gif)
         self.gif.start()
-        self.bottom_layout.addWidget(self.gif_label, alignment=Qt.AlignLeft | Qt.AlignBottom)
+        self.bottom_layout.addWidget(self.gif_label, alignment=Qt.AlignRight | Qt.AlignBottom)
 
         # Add a spacer to push the GIF to the left
         self.bottom_layout.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
@@ -137,6 +145,13 @@ class MainApp(QWidget):
 
         # Add a spacer to push everything up
         self.layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
+
+        # Position the window at the bottom right corner
+        self.move_to_bottom_right()
+
+    def move_to_bottom_right(self):
+        screen_geometry = QDesktopWidget().availableGeometry()
+        self.move(screen_geometry.width() - self.width(), screen_geometry.height() - self.height())
 
     def open_chat_window(self):
         self.chat_window = ChatbotApp()
@@ -147,39 +162,39 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyleSheet("""
         QWidget {
-            background-color: #1e1e2e;
+            background-color: #eaeaea;
         }
         QLineEdit {
             font-family: Arial;
             font-size: 14px;
-            color: #2c1a5d;
+            color: black;
             background-color: white;
-            border: 1px solid #fdb825;
+            border: 1px solid #2c1a5d;
             padding: 15px;
             border-radius: 15px;
         }
         QPushButton {
-            background-color: #fdb825;
-            color: #2c1a5d;
+            background-color: #2c1a5d;
+            color: white;
             font-size: 14px;
             border: none;
             padding: 10px 20px;
             border-radius: 15px;
         }
         QPushButton:hover {
-            background-color: #e0a513;
+            background-color: #24174d;
         }
         QTextEdit {
             font-family: Arial;
             font-size: 14px;
-            color: #fdb825;
-            background-color: #2c1a5d;
-            border: 1px solid #fdb825;
+            color: black;
+            background-color: white;
+            border: 1px solid #2c1a5d;
             padding: 15px;
             border-radius: 15px;
         }
         QLabel {
-            color: #fdb825;
+            color: #2c1a5d;
             font-family: Arial;
             font-size: 24px;
             font-weight: bold;
@@ -192,7 +207,7 @@ if __name__ == '__main__':
             margin: 0px 0px 0px 0px;
         }
         QScrollBar::handle:vertical {
-            background-color: #fdb825;
+            background-color: #2c1a5d;
             min-height: 25px;
             border-radius: 5px;
         }
