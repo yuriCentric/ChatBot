@@ -1,9 +1,11 @@
 import sys
 import getpass
+import os
+import psutil
+import pyttsx3
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QSpacerItem, QSizePolicy, QDesktopWidget
 from PyQt5.QtGui import QFont, QIcon, QMovie, QTextCursor, QTextBlockFormat
-from PyQt5.QtCore import Qt, pyqtSignal, QEvent
-import os
+from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QTimer
 
 from chat_bot import process_input  # Assuming you have a chat_bot module with a process_input function
 
@@ -12,22 +14,26 @@ class ClickableLabel(QLabel):
     def mousePressEvent(self, event):
         self.clicked.emit()
 
+def get_first_name(username):
+    return username.split('.')[0].capitalize()
+
 class ChatbotApp(QWidget):
     def __init__(self):
         super().__init__()
 
         # Get the system username
         username = getpass.getuser()
+        self.user_first_name = get_first_name(username)
 
         # Set up the user interface
-        self.setWindowTitle(f'Welcome to Centric, {username}')
+        self.setWindowTitle(f'Welcome, {self.user_first_name}')
         self.resize(500, 600)
-        self.setWindowIcon(QIcon(os.path.join('icons', 'your_gif.gif')))  # Set an icon for the window
+        self.setWindowIcon(QIcon(os.path.join('icons', 'your_png.png')))  # Set an icon for the window
 
         # Position the window at the bottom right corner
         self.move_to_bottom_right()
         self.layout = QVBoxLayout()
-        self.title = QLabel('Your Centric Buddy')
+        self.title = QLabel('I am your Centric Buddy')
         self.title.setAlignment(Qt.AlignCenter)
         self.title.setFont(QFont('Arial', 24, QFont.Bold))
         self.title.setStyleSheet("color: #2c1a5d; margin-bottom: 20px;")
@@ -41,7 +47,7 @@ class ChatbotApp(QWidget):
             padding: 5px;
             border-radius: 5px;
             font-family: Arial;
-            font-size: 14px;
+            font-size: 16px;
             QScrollBar:vertical {
                 border: none;
                 background: transparent;
@@ -79,7 +85,7 @@ class ChatbotApp(QWidget):
             padding: 10px;
             border-radius: 15px;
             font-family: Arial;
-            font-size: 14px;
+            font-size: 16px;
             QScrollBar:vertical {
                 border: none;
                 background: transparent;
@@ -115,7 +121,7 @@ class ChatbotApp(QWidget):
         self.send_button.setStyleSheet("""
             background-color: #2c1a5d; 
             color: white; 
-            font-size: 14px; 
+            font-size: 16px; 
             border: none; 
             padding: 10px 20px; 
             border-radius: 15px;
@@ -127,7 +133,7 @@ class ChatbotApp(QWidget):
         self.clear_button.setStyleSheet("""
             background-color: #2c1a5d; 
             color: white; 
-            font-size: 14px; 
+            font-size: 16px; 
             border: none; 
             padding: 10px 20px; 
             border-radius: 15px;
@@ -140,6 +146,9 @@ class ChatbotApp(QWidget):
 
         self.setLayout(self.layout)
 
+        # Add battery check
+        self.init_battery_check()
+
     def move_to_bottom_right(self):
         screen_geometry = QDesktopWidget().availableGeometry()
         self.move(screen_geometry.width() - self.width(), screen_geometry.height() - self.height())
@@ -149,7 +158,7 @@ class ChatbotApp(QWidget):
         if user_input:
             self.append_message(f"You: {user_input}", align_right=True)
             response = process_input(user_input)
-            self.append_message(f"Chatbot: {response}", align_right=False)
+            self.append_message(f"CI-Buddy: {response}", align_right=False)
             self.input_box.clear()
 
     def append_message(self, message, align_right=False):
@@ -158,7 +167,13 @@ class ChatbotApp(QWidget):
         block_format = QTextBlockFormat()
         block_format.setAlignment(Qt.AlignRight if align_right else Qt.AlignLeft)
         cursor.insertBlock(block_format)
-        cursor.insertText(message)
+        if align_right:
+            # User message bubble color with spacing
+            formatted_message = f"<div style='background-color: #d2e8ff; padding: 5px; border-radius: 10px; margin-bottom: 20px;'>{message}</div>"
+        else:
+            # Bot message bubble color with spacing
+            formatted_message = f"<div style='background-color: #f0f0f0; padding: 5px; border-radius: 10px; margin-bottom: 20px;'>{message}</div>"
+        cursor.insertHtml(formatted_message)
         self.chat_display.setTextCursor(cursor)
         self.chat_display.ensureCursorVisible()
 
@@ -175,6 +190,24 @@ class ChatbotApp(QWidget):
                 self.input_box.insertPlainText("\n")
                 return True
         return super(ChatbotApp, self).eventFilter(source, event)
+
+    def init_battery_check(self):
+        self.battery_timer = QTimer(self)
+        self.battery_timer.timeout.connect(self.check_battery)
+        self.battery_timer.start(60000)  # Check every minute
+
+    def check_battery(self):
+        battery = psutil.sensors_battery()
+        if battery is not None:
+            if battery.percent >= 95 and battery.power_plugged:
+                self.voice_alert("Battery is full. Please unplug the charger.")
+            elif battery.percent <= 20 and not battery.power_plugged:
+                self.voice_alert("Battery is low. Please plug in the charger.")
+
+    def voice_alert(self, message):
+        engine = pyttsx3.init()
+        engine.say(message)
+        engine.runAndWait()
 
 class MainApp(QWidget):
     def __init__(self):
@@ -227,7 +260,7 @@ if __name__ == '__main__':
         }
         QLineEdit, QTextEdit {
             font-family: Arial;
-            font-size: 14px;
+            font-size: 16px;
             color: black;
             background-color: white;
             border: 1px solid #2c1a5d;
@@ -262,7 +295,7 @@ if __name__ == '__main__':
         QPushButton {
             background-color: #2c1a5d;
             color: white;
-            font-size: 14px;
+            font-size: 16px;
             border: none;
             padding: 10px 20px;
             border-radius: 15px;
@@ -272,7 +305,7 @@ if __name__ == '__main__':
         }
         QTextEdit {
             font-family: Arial;
-            font-size: 14px;
+            font-size: 16px;
             color: black;
             background-color: white;
             border: 1px solid #2c1a5d;
