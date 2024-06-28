@@ -28,7 +28,7 @@ class ChatbotApp(QWidget):
         # Set up the user interface
         self.setWindowTitle(f'Welcome, {self.user_first_name}')
         self.resize(500, 600)
-        self.setWindowIcon(QIcon(os.path.join('icons', 'your_png.png')))  # Set an icon for the window
+        self.setWindowIcon(QIcon(os.path.join('app\\icons', 'your_png.png')))  # Set an icon for the window
 
         # Position the window at the bottom right corner
         self.move_to_bottom_right()
@@ -227,7 +227,7 @@ class MainApp(QWidget):
         # Add the GIF label
         self.gif_label = ClickableLabel(self)
         self.gif_label.setStyleSheet("background: transparent;")
-        self.gif = QMovie(os.path.join('icons', 'your_gif.gif'))  # Ensure you have a GIF named your_gif.gif
+        self.gif = QMovie(os.path.join('app\\icons', 'your_gif.gif'))  # Ensure you have a GIF named your_gif.gif
         self.gif_label.setMovie(self.gif)
         self.gif.start()
         self.bottom_layout.addWidget(self.gif_label, alignment=Qt.AlignRight | Qt.AlignBottom)
