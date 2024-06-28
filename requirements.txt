@@ -2,3 +2,5 @@ spacy
 pyqt5
 pandas
 openpyxl
+psutil
+pyttsx3
