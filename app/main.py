@@ -1,19 +1,13 @@
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QSpacerItem, QSizePolicy, QDesktopWidget, QMessageBox
+from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QTimer, QPropertyAnimation, QRect, QSequentialAnimationGroup, QSize
+from PyQt5.QtGui import QFont, QIcon, QTextCursor, QTextBlockFormat, QPixmap, QMovie
 import sys
 import getpass
 import os
 import psutil
 import pyttsx3
 from datetime import datetime, time
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QSpacerItem, QSizePolicy, QDesktopWidget, QMessageBox
-from PyQt5.QtGui import QFont, QIcon, QTextCursor, QTextBlockFormat, QPixmap, QMovie
-from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QTimer, QPropertyAnimation, QRect, QSequentialAnimationGroup, QSize
-
 from chat_bot import process_input  # Assuming you have a chat_bot module with a process_input function
-
-class ClickableLabel(QLabel):
-    clicked = pyqtSignal()
-    def mousePressEvent(self, event):
-        self.clicked.emit()
 
 def get_first_name(username):
     return username.split('.')[0].capitalize()
@@ -74,6 +68,8 @@ class ChatbotApp(QWidget):
                 padding: 5px;
                 font-family: Arial;
                 font-size: 18px;
+                margin-top: 0px;  /* Reduce the margin to decrease top padding */
+                margin-bottom: 0px;  /* Reduce the margin to decrease bottom padding */
             }
             QScrollBar:vertical {
                 border: none;
@@ -152,7 +148,7 @@ class ChatbotApp(QWidget):
 
     def move_to_bottom_right(self):
         screen_geometry = QDesktopWidget().availableGeometry()
-        self.move(screen_geometry.width() - self.width(), screen_geometry.height() - self.height())
+        self.move(screen_geometry.width() - self.width() - 50, screen_geometry.height() - self.height() - 80)
 
     def send_message(self):
         user_input = self.input_box.toPlainText().strip()
@@ -166,23 +162,23 @@ class ChatbotApp(QWidget):
 
     def append_message(self, message, timestamp, align_right=False):
         try:
-        # Parse the provided timestamp and combine it with the current date
-            time_part = datetime.strptime(timestamp, '%I:%M %p').strftime('%H:%M')
+            # Parse the provided timestamp and convert it to 12-hour format with AM/PM
+            time_part = datetime.strptime(timestamp, '%I:%M %p').strftime('%I:%M %p')
             date_part = datetime.now().strftime('%A')  # Get current day of the week
             full_timestamp = f"{time_part}, {date_part}"
         except ValueError:
-        # If the format is unexpected, use the timestamp as-is
+            # If the format is unexpected, use the timestamp as-is
             full_timestamp = timestamp
 
         cursor = self.chat_display.textCursor()
         cursor.movePosition(QTextCursor.End)
         block_format = QTextBlockFormat()
         block_format.setAlignment(Qt.AlignRight if align_right else Qt.AlignLeft)
-        cursor.insertBlock(block_format) 
+        cursor.insertBlock(block_format)
 
         user_style = """
-            <div style="display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 10px;">
-                <div style="background-color: #E8EAF6; color: black; padding: 10px 15px; border-radius: 15px; max-width: 75%; word-wrap: break-word;">
+            <div style="display: flex; flex-direction: column; align-items: flex-end;margin-top: 0;">
+                <div style="background-color: #E8EAF6; color: black; padding: 10px 15px; border-radius: 25px; max-width: 75%; word-wrap: break-word;">
                     {message}
                     <div style="font-size: 14px; color: gray; text-align: right; margin-top: 5px;">{timestamp}</div>
                 </div>
@@ -204,8 +200,6 @@ class ChatbotApp(QWidget):
         cursor.insertHtml(formatted_message)
         self.chat_display.setTextCursor(cursor)
         self.chat_display.ensureCursorVisible()
-
-
 
     def clear_chat(self):
         self.chat_display.clear()
@@ -280,7 +274,7 @@ class MainApp(QWidget):
         self.bottom_layout = QHBoxLayout()
         self.layout.addLayout(self.bottom_layout)
 
-        self.gif_label = ClickableLabel(self)
+        self.gif_label = QLabel(self)  # Change here from ClickableLabel to QLabel
         self.gif_label.setStyleSheet("background: transparent;")
         self.gif = QMovie(os.path.join('app', 'icons', 'your_gif.gif'))
         self.gif_label.setMovie(self.gif)
@@ -288,7 +282,8 @@ class MainApp(QWidget):
         self.bottom_layout.addWidget(self.gif_label, alignment=Qt.AlignRight | Qt.AlignBottom)
 
         self.bottom_layout.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
-        self.gif_label.clicked.connect(self.open_chat_window)
+        self.gif_label.mousePressEvent = self.open_chat_window  # Connect mousePressEvent directly
+        self.gif_label.setCursor(Qt.PointingHandCursor)  # Set cursor to pointing hand
 
         self.layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
@@ -296,9 +291,9 @@ class MainApp(QWidget):
 
     def move_to_bottom_right(self):
         screen_geometry = QDesktopWidget().availableGeometry()
-        self.move(screen_geometry.width() - self.width(), screen_geometry.height() - self.height())
+        self.move(screen_geometry.width() - self.width() + 300, screen_geometry.height() - self.height() + 200)
 
-    def open_chat_window(self):
+    def open_chat_window(self, event):
         self.chat_window = ChatbotApp()
         self.chat_window.show()
         self.chat_window.moving_label.start_animation()
@@ -354,7 +349,7 @@ if __name__ == '__main__':
             color: black;
             background-color: white;
             border: none;
-            padding: 10px;
+            padding: 2px 10px 10px 10px;
         }
         QLabel {
             color: lightgrey;
