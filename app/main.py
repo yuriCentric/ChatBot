@@ -3,10 +3,10 @@ import getpass
 import os
 import psutil
 import pyttsx3
-from datetime import datetime
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QSpacerItem, QSizePolicy, QDesktopWidget
-from PyQt5.QtGui import QFont, QIcon, QMovie, QTextCursor, QTextBlockFormat
-from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QTimer, QPropertyAnimation, QRect, QSequentialAnimationGroup
+from datetime import datetime, time
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QSpacerItem, QSizePolicy, QDesktopWidget, QMessageBox
+from PyQt5.QtGui import QFont, QIcon, QTextCursor, QTextBlockFormat, QPixmap, QMovie
+from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QTimer, QPropertyAnimation, QRect, QSequentialAnimationGroup, QSize
 
 from chat_bot import process_input  # Assuming you have a chat_bot module with a process_input function
 
@@ -21,10 +21,10 @@ def get_first_name(username):
 class MovingLabel(QLabel):
     def __init__(self, text):
         super().__init__(text)
-        self.setStyleSheet("color: red; font-size: 14px; font-weight: bold; font-family: Arial;")
+        self.setStyleSheet("color: blue; font-size: 14px; font-weight: bold; font-family: Arial;")
         self.setAlignment(Qt.AlignCenter)
         self.animation = QPropertyAnimation(self, b"geometry")
-        self.animation.setDuration(30000)  # Slowed down the animation
+        self.animation.setDuration(25000)  # Slowed down the animation
         screen_width = QApplication.desktop().screenGeometry().width()
         self.animation.setStartValue(QRect(screen_width, 0, screen_width, 50))  # Start off screen on the right
         self.animation.setEndValue(QRect(-screen_width, 0, screen_width, 50))  # End off screen on the left
@@ -45,6 +45,7 @@ class ChatbotApp(QWidget):
         self.setWindowTitle(f'Welcome, {self.user_first_name}')
         self.resize(500, 600)
         self.setWindowIcon(QIcon(os.path.join('app', 'icons', 'your_png.png')))
+        self.setStyleSheet("background-color: white;")
 
         self.move_to_bottom_right()
         self.layout = QVBoxLayout()
@@ -54,19 +55,23 @@ class ChatbotApp(QWidget):
 
         self.title = QLabel('Hi, I am your Centric Buddy')
         self.title.setAlignment(Qt.AlignCenter)
-        self.title.setFont(QFont('Arial', 26, QFont.Bold))
-        self.title.setStyleSheet("color: #2c1a5d; margin-top: 0px; margin-bottom: 5px;")
+        self.title.setFont(QFont('Arial', 20, QFont.Bold))
+        self.title.setStyleSheet("color: #d3d3d3; background-color: #f2f2f2; padding: 20px; border-radius: 10px;")
         self.layout.addWidget(self.title)
+
+        self.new_chat_image = QLabel(self)
+        self.new_chat_image.setPixmap(QPixmap(os.path.join('app', 'icons', 'newchat.png')))
+        self.new_chat_image.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(self.new_chat_image)
 
         self.chat_display = QTextEdit(self)
         self.chat_display.setReadOnly(True)
         self.chat_display.setStyleSheet("""
             QTextEdit {
-                color: black; 
+                color: black;
                 background-color: white;
-                border: 1px solid #2c1a5d;
+                border: none;
                 padding: 5px;
-                border-radius: 5px;
                 font-family: Arial;
                 font-size: 18px;
             }
@@ -95,87 +100,54 @@ class ChatbotApp(QWidget):
         """)
         self.layout.addWidget(self.chat_display)
 
+        # Separator line
+        self.separator = QLabel(self)
+        self.separator.setFixedHeight(2)
+        self.separator.setStyleSheet("background-color: #d3d3d3; margin: 5px 0;")
+        self.layout.addWidget(self.separator)
+
         self.input_layout = QHBoxLayout()
-        
+        self.input_layout.setContentsMargins(10, 10, 10, 10)
+
         self.input_box = QTextEdit(self)
-        self.input_box.setPlaceholderText("Type your message here...")
+        self.input_box.setPlaceholderText("Type your questions here ...")
         self.input_box.setStyleSheet("""
             QTextEdit {
-                color: black; 
+                color: black;
                 background-color: white;
-                border: 1px solid #2c1a5d;
-                padding: 10px;
-                border-radius: 15px;
+                border: none;
                 font-family: Arial;
                 font-size: 18px;
-            }
-            QScrollBar:vertical {
-                border: none;
-                background: transparent;
-                width: 8px;
-                margin: 0;
-            }
-            QScrollBar::handle:vertical {
-                background: #a0a0a0;
-                min-height: 25px;
-                border-radius: 4px;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                border: none;
-                background: none.
-            }
-            QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
-                background: none.
-                color: #333.
-            }
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-                background: none.
+                padding: 10px;
+                max-height: 60px; /* Limit height to 3 lines */
             }
         """)
-        self.input_box.setFixedHeight(95)  # Fixed height to maintain size
+        self.input_box.setFixedHeight(60)
+        self.input_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.input_box.installEventFilter(self)
-        self.input_layout.addWidget(self.input_box)
 
-        self.button_layout = QVBoxLayout()
-        self.send_button = QPushButton('Send', self)
+        self.send_button = QPushButton('', self)
+        send_icon = QIcon(os.path.join('app', 'icons', 'send.png'))  # Ensure you have an appropriate send icon
+        self.send_button.setIcon(send_icon)
+        self.send_button.setIconSize(QSize(30, 30))  # Make send icon larger
         self.send_button.clicked.connect(self.send_message)
         self.send_button.setStyleSheet("""
             QPushButton {
-                background-color: #2c1a5d; 
-                color: white; 
-                font-size: 18px; 
-                border: none; 
-                padding: 10px 20px; 
-                border-radius: 15px;
-            }
-            QPushButton:hover {
-                background-color: #24174d;
+                background-color: transparent;
+                border: none;
+                margin-left: 10px;
             }
         """)
         self.send_button.setCursor(Qt.PointingHandCursor)
-        self.button_layout.addWidget(self.send_button)
-        self.clear_button = QPushButton('Clear', self)
-        self.clear_button.clicked.connect(self.clear_chat)
-        self.clear_button.setStyleSheet("""
-            QPushButton {
-                background-color: #2c1a5d; 
-                color: white; 
-                font-size: 18px; 
-                border: none; 
-                padding: 10px 20px; 
-                border-radius: 15px;
-            }
-            QPushButton:hover {
-                background-color: #24174d;
-            }
-        """)
-        self.clear_button.setCursor(Qt.PointingHandCursor)
-        self.button_layout.addWidget(self.clear_button)
-        self.input_layout.addLayout(self.button_layout)
+
+        self.input_layout.addWidget(self.input_box)
+        self.input_layout.addWidget(self.send_button, alignment=Qt.AlignBottom)
+
         self.layout.addLayout(self.input_layout)
         self.setLayout(self.layout)
 
         self.init_battery_check()
+        self.init_reminder_popup()  # Initialize reminder popup
 
     def move_to_bottom_right(self):
         screen_geometry = QDesktopWidget().availableGeometry()
@@ -184,33 +156,40 @@ class ChatbotApp(QWidget):
     def send_message(self):
         user_input = self.input_box.toPlainText().strip()
         if user_input:
-            timestamp = datetime.now().strftime('%H:%M')
-            self.append_message(f"<span style='font-size:12px;'>{timestamp}</span>\n", align_right=True)
-            self.append_message(f"{user_input} <b>:You</b>", align_right=True)
+            self.new_chat_image.hide()  # Hide the new chat image when the first message is sent
+            timestamp = datetime.now().strftime('%I:%M %p')
+            self.append_message(user_input, timestamp, align_right=True)
             response = process_input(user_input)
-            timestamp = datetime.now().strftime('%H:%M')
-            self.append_message(f"<span style='font-size:12px;'>{timestamp}</span>\n", align_right=False)
-
-            # Format the entire response text with a background color
-            formatted_response = f"<b>CI-Buddy:</b> <span style='background-color: #e6ffe6; padding: 5px; border-radius: 10px; display: inline-block;'>{response}</span>"
-            
-            self.append_message(formatted_response, align_right=False)
-            
+            self.append_message(response, timestamp, align_right=False)
             self.input_box.clear()
 
-    def append_message(self, message, align_right=False):
+    def append_message(self, message, timestamp, align_right=False):
         cursor = self.chat_display.textCursor()
         cursor.movePosition(QTextCursor.End)
         block_format = QTextBlockFormat()
         block_format.setAlignment(Qt.AlignRight if align_right else Qt.AlignLeft)
         cursor.insertBlock(block_format)
+
+        user_style = """
+            <div style='display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 10px;'>
+                <div style='background-color: #E8EAF6; color: black; padding: 10px 15px; border-radius: 15px; max-width: 75%; word-wrap: break-word;'>
+                    {message}
+                    <div style='font-size: 10px; color: gray; text-align: right; margin-top: 5px;'>{timestamp}</div>
+                </div>
+            </div>
+        """
         
-        if align_right:
-            # User message bubble color with spacing
-            formatted_message = f"<div style='background-color: #d2e8ff; padding: 5px; border-radius: 10px; margin-bottom: 10px; max-width: 75%;'>{message}</div>"
-        else:
-            # Bot message bubble color with spacing
-            formatted_message = f"<div style='background-color: #f0f0f0; padding: 5px; border-radius: 10px; margin-bottom: 10px; max-width: 75%;'>{message}</div>"
+        bot_style = """
+            <div style='display: flex; align-items: center; margin-bottom: 10px;'>
+                <img src='app/icons/chat.png' width='30' height='30' style='margin-right: 10px; border-radius: 50%;' />
+                <div style='background-color: #1A73E8; color: white; padding: 10px 15px; border-radius: 15px; max-width: 75%; word-wrap: break-word;'>
+                    {message}
+                    <div style='font-size: 10px; color: gray; text-align: left; margin-top: 5px;'>{timestamp}</div>
+                </div>
+            </div>
+        """
+        
+        formatted_message = user_style.format(message=message, timestamp=timestamp) if align_right else bot_style.format(message=message, timestamp=timestamp)
         
         cursor.insertHtml(formatted_message)
         self.chat_display.setTextCursor(cursor)
@@ -218,6 +197,8 @@ class ChatbotApp(QWidget):
 
     def clear_chat(self):
         self.chat_display.clear()
+
+        self.new_chat_image.show()  # Show the new chat image when the chat is cleared
 
     def eventFilter(self, source, event):
         if (event.type() == QEvent.KeyPress and source is self.input_box):
@@ -239,15 +220,41 @@ class ChatbotApp(QWidget):
         if battery is not None:
             if battery.percent >= 95 and battery.power_plugged:
                 self.voice_alert("Battery is full. Please unplug the charger.")
-                self.voice_alert("Battery is full. Please unplug the charger.")
             elif battery.percent <= 20 and not battery.power_plugged:
-                self.voice_alert("Battery is low. Please plug in the charger.")
                 self.voice_alert("Battery is low. Please plug in the charger.")
 
     def voice_alert(self, message):
         engine = pyttsx3.init()
+        engine.setProperty('rate', 150)  # Set a slower speaking rate
         engine.say(message)
         engine.runAndWait()
+
+    def init_reminder_popup(self):
+        self.reminder_timer = QTimer(self)
+        self.reminder_timer.timeout.connect(self.check_reminder_time)
+        self.reminder_timer.start(60000)  # Check every minute
+
+    def check_reminder_time(self):
+        now = datetime.now()
+        if now.weekday() == 2:  # Check if today is Wednesday (0=Monday, 1=Tuesday, ..., 6=Sunday)
+            reminder_times = [time(3, 30), time(9, 0), time(10, 0), time(11, 0), time(12, 0)]
+            for reminder_time in reminder_times:
+                if now.time().replace(second=0, microsecond=0) == reminder_time:
+                    self.show_reminder_popup()
+
+    def show_reminder_popup(self):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setWindowTitle("Timesheet Reminder")
+        msg.setText("A Reminder to fill timesheet today!")
+        msg.setStandardButtons(QMessageBox.Close)
+        msg.buttonClicked.connect(msg.close)
+        
+        # Show popup
+        msg.show()
+        
+        # Play voice alert
+        self.voice_alert("A Reminder to fill timesheet today!")
 
 class MainApp(QWidget):
     def __init__(self):
@@ -289,20 +296,19 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyleSheet("""
         QWidget {
-            background-color: #eaeaea;
+            background-color: white;
         }
-        QLineEdit, QTextEdit {
+        QLineEdit {
             font-family: Arial;
             font-size: 18px;
             color: black;
-            background-color: white;
-            border: 1px solid #2c1a5d;
+            background-color: transparent;
+            border: none;
             padding: 15px;
-            border-radius: 15px;
         }
-        QLineEdit:focus, QTextEdit:focus {
-            border: 1px solid #2c1a5d;
-            background-color: white;
+        QLineEdit:focus {
+            border: none;
+            background-color: transparent;
         }
         QScrollBar:vertical {
             border: none;
@@ -326,27 +332,20 @@ if __name__ == '__main__':
             background: none;
         }
         QPushButton {
-            background-color: #2c1a5d;
-            color: white;
-            font-size: 18px;
+            background-color: transparent;
             border: none;
-            padding: 10px 20px;
-            border-radius: 15px;
-        }
-        QPushButton:hover {
-            background-color: #24174d;
+            padding: 0px;
         }
         QTextEdit {
             font-family: Arial;
             font-size: 18px;
             color: black;
             background-color: white;
-            border: 1px solid #2c1a5d;
+            border: none;
             padding: 15px;
-            border-radius: 15px;
         }
         QLabel {
-            color: #2c1a5d;
+            color: lightgrey;
             font-family: Arial;
             font-size: 25px;
             font-weight: bold;
