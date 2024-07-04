@@ -177,8 +177,8 @@ class ChatbotApp(QWidget):
         cursor.insertBlock(block_format)
 
         user_style = """
-            <div style="display: flex; flex-direction: column; align-items: flex-end;margin-top: 0;">
-                <div style="background-color: #E8EAF6; color: black; padding: 10px 15px; border-radius: 25px; max-width: 75%; word-wrap: break-word;">
+            <div style="display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 10px;">
+                <div style="background-color: #E8EAF6; color: black; padding: 10px 15px; border-radius: 15px; max-width: 75%; word-wrap: break-word;">
                     {message}
                     <div style="font-size: 14px; color: gray; text-align: right; margin-top: 5px;">{timestamp}</div>
                 </div>
