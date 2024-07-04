@@ -21,7 +21,7 @@ def get_first_name(username):
 class MovingLabel(QLabel):
     def __init__(self, text):
         super().__init__(text)
-        self.setStyleSheet("color: blue; font-size: 14px; font-weight: bold; font-family: Arial;")
+        self.setStyleSheet("color: blue; font-size: 14px; font-weight: bold; font-family: Arial; padding: 0px")
         self.setAlignment(Qt.AlignCenter)
         self.animation = QPropertyAnimation(self, b"geometry")
         self.animation.setDuration(25000)  # Slowed down the animation
@@ -49,14 +49,14 @@ class ChatbotApp(QWidget):
 
         self.move_to_bottom_right()
         self.layout = QVBoxLayout()
-
+        
         self.moving_label = MovingLabel("This chatbot is designed for Centric India employees as a personal buddy.")
         self.layout.addWidget(self.moving_label)
 
         self.title = QLabel('Hi, I am your Centric Buddy')
         self.title.setAlignment(Qt.AlignCenter)
         self.title.setFont(QFont('Arial', 20, QFont.Bold))
-        self.title.setStyleSheet("color: #d3d3d3; background-color: #f2f2f2; padding: 20px; border-radius: 10px;")
+        self.title.setStyleSheet("color: #A6A6A6; background-color: #f2f2f2; padding: 20px; border-radius: 10px;")
         self.layout.addWidget(self.title)
 
         self.new_chat_image = QLabel(self)
@@ -70,7 +70,7 @@ class ChatbotApp(QWidget):
             QTextEdit {
                 color: black;
                 background-color: white;
-                border: none;
+                border-radius: 5px;
                 padding: 5px;
                 font-family: Arial;
                 font-size: 18px;
@@ -115,27 +115,28 @@ class ChatbotApp(QWidget):
             QTextEdit {
                 color: black;
                 background-color: white;
-                border: none;
+                border-radius: 5px;
                 font-family: Arial;
                 font-size: 18px;
                 padding: 10px;
                 max-height: 60px; /* Limit height to 3 lines */
             }
         """)
-        self.input_box.setFixedHeight(60)
+        self.input_box.setFixedHeight(55)
         self.input_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.input_box.installEventFilter(self)
 
         self.send_button = QPushButton('', self)
         send_icon = QIcon(os.path.join('app', 'icons', 'send.png'))  # Ensure you have an appropriate send icon
         self.send_button.setIcon(send_icon)
-        self.send_button.setIconSize(QSize(30, 30))  # Make send icon larger
+        self.send_button.setIconSize(QSize(45, 45))  # Make send icon larger/smaller
         self.send_button.clicked.connect(self.send_message)
         self.send_button.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
                 border: none;
-                margin-left: 10px;
+                margin-left: 11px;
+                margin-bottom: 8px;
             }
         """)
         self.send_button.setCursor(Qt.PointingHandCursor)
@@ -164,36 +165,47 @@ class ChatbotApp(QWidget):
             self.input_box.clear()
 
     def append_message(self, message, timestamp, align_right=False):
+        try:
+        # Parse the provided timestamp and combine it with the current date
+            time_part = datetime.strptime(timestamp, '%I:%M %p').strftime('%H:%M')
+            date_part = datetime.now().strftime('%A')  # Get current day of the week
+            full_timestamp = f"{time_part}, {date_part}"
+        except ValueError:
+        # If the format is unexpected, use the timestamp as-is
+            full_timestamp = timestamp
+
         cursor = self.chat_display.textCursor()
         cursor.movePosition(QTextCursor.End)
         block_format = QTextBlockFormat()
         block_format.setAlignment(Qt.AlignRight if align_right else Qt.AlignLeft)
-        cursor.insertBlock(block_format)
+        cursor.insertBlock(block_format) 
 
         user_style = """
-            <div style='display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 10px;'>
-                <div style='background-color: #E8EAF6; color: black; padding: 10px 15px; border-radius: 15px; max-width: 75%; word-wrap: break-word;'>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 10px;">
+                <div style="background-color: #E8EAF6; color: black; padding: 10px 15px; border-radius: 15px; max-width: 75%; word-wrap: break-word;">
                     {message}
-                    <div style='font-size: 10px; color: gray; text-align: right; margin-top: 5px;'>{timestamp}</div>
+                    <div style="font-size: 14px; color: gray; text-align: right; margin-top: 5px;">{timestamp}</div>
                 </div>
             </div>
         """
         
         bot_style = """
-            <div style='display: flex; align-items: center; margin-bottom: 10px;'>
-                <img src='app/icons/chat.png' width='30' height='30' style='margin-right: 10px; border-radius: 50%;' />
-                <div style='background-color: #1A73E8; color: white; padding: 10px 15px; border-radius: 15px; max-width: 75%; word-wrap: break-word;'>
-                    {message}
-                    <div style='font-size: 10px; color: gray; text-align: left; margin-top: 5px;'>{timestamp}</div>
+            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <img src='app/icons/chat.png' width='30' height='30' style="margin-right: 10px; border-radius: 50%;" />
+                <div style="background-color: #1A73E8; color: white; padding: 10px 15px; border-radius: 25px; max-width: 75%; word-wrap: break-word; display: flex; flex-direction: column;">
+                    <div>{message}</div>
+                    <div style="font-size: 14px; color: gray; text-align: left; margin-top: 5px;">{timestamp}</div>
                 </div>
             </div>
         """
         
-        formatted_message = user_style.format(message=message, timestamp=timestamp) if align_right else bot_style.format(message=message, timestamp=timestamp)
+        formatted_message = user_style.format(message=message, timestamp=full_timestamp) if align_right else bot_style.format(message=message, timestamp=full_timestamp)
         
         cursor.insertHtml(formatted_message)
         self.chat_display.setTextCursor(cursor)
         self.chat_display.ensureCursorVisible()
+
+
 
     def clear_chat(self):
         self.chat_display.clear()
@@ -342,14 +354,14 @@ if __name__ == '__main__':
             color: black;
             background-color: white;
             border: none;
-            padding: 15px;
+            padding: 10px;
         }
         QLabel {
             color: lightgrey;
             font-family: Arial;
-            font-size: 25px;
+            font-size: 22px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
     """)
     main_app = MainApp()
