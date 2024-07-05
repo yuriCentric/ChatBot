@@ -4,3 +4,4 @@ pandas
 openpyxl
 psutil
 pyttsx3
+textblob

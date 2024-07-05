@@ -10,6 +10,7 @@ pip install pandas
 pip install openpyxl
 pip install psutil
 pip install pyttsx3
+pip install textblob
 
 python -m spacy download en_core_web_sm
 
