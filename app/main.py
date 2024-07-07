@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QSpacerItem, QSizePolicy, QDesktopWidget, QMessageBox
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QSpacerItem, QSizePolicy, QDesktopWidget, QMessageBox, QDialog
 from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QTimer, QPropertyAnimation, QRect, QSequentialAnimationGroup, QSize
 from PyQt5.QtGui import QFont, QIcon, QTextCursor, QTextBlockFormat, QPixmap, QMovie
 import sys
@@ -6,6 +6,7 @@ import getpass
 import os
 import psutil
 import pyttsx3
+import threading
 from datetime import datetime, time
 from chat_bot import process_input  # Assuming you have a chat_bot module with a process_input function
 
@@ -29,6 +30,52 @@ class MovingLabel(QLabel):
     def start_animation(self):
         self.animation_group.start()
 
+class ReminderDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Timesheet Reminder")
+        self.setStyleSheet("""
+            QDialog {
+                background-color: white;
+                border-radius: 10px;
+                border: 1px solid #d3d3d3;
+            }
+            QLabel {
+                color: black;
+                font-family: Arial;
+                font-size: 18px;
+                padding: 20px;
+            }
+            QPushButton {
+                background-color: #1A73E8;
+                color: white;
+                font-family: Arial;
+                font-size: 14px;
+                padding: 10px;
+                border: none;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #155bb5;
+            }
+        """)
+
+        layout = QVBoxLayout()
+        label = QLabel("Important: Have you submitted your timesheet today?")
+        layout.addWidget(label)
+
+        button_layout = QHBoxLayout()
+        yes_button = QPushButton("Yes")
+        no_button = QPushButton("No")
+        button_layout.addWidget(yes_button)
+        button_layout.addWidget(no_button)
+
+        layout.addLayout(button_layout)
+        self.setLayout(layout)
+
+        yes_button.clicked.connect(self.accept)
+        no_button.clicked.connect(self.reject)
+
 class ChatbotApp(QWidget):
     def __init__(self):
         super().__init__()
@@ -44,8 +91,8 @@ class ChatbotApp(QWidget):
         self.move_to_bottom_right()
         self.layout = QVBoxLayout()
         
-        self.moving_label = MovingLabel("This chatbot is designed for Centric India employees as a personal buddy.")
-        self.layout.addWidget(self.moving_label)
+        # self.moving_label = MovingLabel("This chatbot is designed for Centric India employees as a personal buddy.")
+        # self.layout.addWidget(self.moving_label)
 
         self.title = QLabel('Hi, I am your Centric Buddy')
         self.title.setAlignment(Qt.AlignCenter)
@@ -91,7 +138,7 @@ class ChatbotApp(QWidget):
                 color: #333;
             }
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-                background: none;
+                background: none.
             }
         """)
         self.layout.addWidget(self.chat_display)
@@ -148,7 +195,7 @@ class ChatbotApp(QWidget):
 
     def move_to_bottom_right(self):
         screen_geometry = QDesktopWidget().availableGeometry()
-        self.move(screen_geometry.width() - self.width() - 50, screen_geometry.height() - self.height() - 80)
+        self.move(screen_geometry.width() - self.width() - 5, screen_geometry.height() - self.height() - 50)
 
     def send_message(self):
         user_input = self.input_box.toPlainText().strip()
@@ -178,7 +225,7 @@ class ChatbotApp(QWidget):
 
         user_style = """
             <div style="display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 10px;">
-                <div style="background-color: #E8EAF6; color: black; padding: 10px 15px; border-radius: 15px; max-width: 75%; word-wrap: break-word;">
+                <div style="background-color: #E8E8E8; color: black; padding: 10px 15px; border-radius: 15px; max-width: 75%; word-wrap: break-word;">
                     {message}
                     <div style="font-size: 14px; color: gray; text-align: right; margin-top: 5px;">{timestamp}</div>
                 </div>
@@ -242,25 +289,19 @@ class ChatbotApp(QWidget):
 
     def check_reminder_time(self):
         now = datetime.now()
-        if now.weekday() == 2:  # Check if today is Wednesday (0=Monday, 1=Tuesday, ..., 6=Sunday)
-            reminder_times = [time(3, 30), time(9, 0), time(10, 0), time(11, 0), time(12, 0)]
+        if now.weekday() == 4:  # Check if today is Wednesday (0=Monday, 1=Tuesday, ..., 6=Sunday)
+            reminder_times = [time(11, 0), time(13, 0), time(17, 0)]
             for reminder_time in reminder_times:
                 if now.time().replace(second=0, microsecond=0) == reminder_time:
+                    threading.Thread(target=self.voice_alert, args=("Have you submitted your timesheet today?",)).start()
                     self.show_reminder_popup()
 
     def show_reminder_popup(self):
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Information)
-        msg.setWindowTitle("Timesheet Reminder")
-        msg.setText("A Reminder to fill timesheet today!")
-        msg.setStandardButtons(QMessageBox.Close)
-        msg.buttonClicked.connect(msg.close)
-        
-        # Show popup
-        msg.show()
-        
-        # Play voice alert
-        self.voice_alert("A Reminder to fill timesheet today!")
+        self.dialog = ReminderDialog()
+        self.dialog.exec_()
+        if self.dialog.result() == QDialog.Rejected:
+            self.new_chat_image.hide()
+            self.append_message(f"Hi {self.user_first_name}, it's important to submit your timesheet today. You can do it here: https://auth.openair.com/", datetime.now().strftime('%I:%M %p'), align_right=False)
 
 class MainApp(QWidget):
     def __init__(self):
@@ -291,12 +332,12 @@ class MainApp(QWidget):
 
     def move_to_bottom_right(self):
         screen_geometry = QDesktopWidget().availableGeometry()
-        self.move(screen_geometry.width() - self.width() + 300, screen_geometry.height() - self.height() + 200)
+        self.move(screen_geometry.width() - self.width() + 300, screen_geometry.height() - self.height() + 150)
 
     def open_chat_window(self, event):
         self.chat_window = ChatbotApp()
         self.chat_window.show()
-        self.chat_window.moving_label.start_animation()
+        # self.chat_window.moving_label.start_animation()
         self.close()
 
 if __name__ == '__main__':
