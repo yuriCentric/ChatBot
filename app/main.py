@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QSpacerItem, QSizePolicy, QDesktopWidget, QMessageBox, QDialog
-from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QTimer, QPropertyAnimation, QRect, QSequentialAnimationGroup, QSize
+from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QTimer, QRect, QSize
 from PyQt5.QtGui import QFont, QIcon, QTextCursor, QTextBlockFormat, QPixmap, QMovie
 import sys
 import getpass
@@ -12,23 +12,6 @@ from chat_bot import process_input  # Assuming you have a chat_bot module with a
 
 def get_first_name(username):
     return username.split('.')[0].capitalize()
-
-class MovingLabel(QLabel):
-    def __init__(self, text):
-        super().__init__(text)
-        self.setStyleSheet("color: blue; font-size: 14px; font-weight: bold; font-family: Arial; padding: 0px")
-        self.setAlignment(Qt.AlignCenter)
-        self.animation = QPropertyAnimation(self, b"geometry")
-        self.animation.setDuration(25000)  # Slowed down the animation
-        screen_width = QApplication.desktop().screenGeometry().width()
-        self.animation.setStartValue(QRect(screen_width, 0, screen_width, 50))  # Start off screen on the right
-        self.animation.setEndValue(QRect(-screen_width, 0, screen_width, 50))  # End off screen on the left
-        self.animation_group = QSequentialAnimationGroup()
-        self.animation_group.addAnimation(self.animation)
-        self.animation_group.setLoopCount(-1)  # Infinite loop
-
-    def start_animation(self):
-        self.animation_group.start()
 
 class ReminderDialog(QDialog):
     def __init__(self):
@@ -90,9 +73,6 @@ class ChatbotApp(QWidget):
 
         self.move_to_bottom_right()
         self.layout = QVBoxLayout()
-        
-        # self.moving_label = MovingLabel("This chatbot is designed for Centric India employees as a personal buddy.")
-        # self.layout.addWidget(self.moving_label)
 
         self.title = QLabel('Hi, I am your Centric Buddy')
         self.title.setAlignment(Qt.AlignCenter)
@@ -337,7 +317,6 @@ class MainApp(QWidget):
     def open_chat_window(self, event):
         self.chat_window = ChatbotApp()
         self.chat_window.show()
-        # self.chat_window.moving_label.start_animation()
         self.close()
 
 if __name__ == '__main__':
