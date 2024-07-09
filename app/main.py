@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QSpacerItem, QSizePolicy, QDesktopWidget, QMessageBox, QDialog
-from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QTimer, QRect, QSize
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QSpacerItem, QSizePolicy, QDesktopWidget, QDialog
+from PyQt5.QtCore import Qt, QEvent, QTimer, QSize
 from PyQt5.QtGui import QFont, QIcon, QTextCursor, QTextBlockFormat, QPixmap, QMovie
 import sys
 import getpass
@@ -16,7 +16,10 @@ def get_first_name(username):
 class ReminderDialog(QDialog):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Timesheet Reminder")
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        # self.setWindowFlags(Qt.WindowTitleHint | Qt.CustomizeWindowHint)
+        self.setWindowTitle("Important: Timesheet Reminder")
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)         # Set window flags to remove the "?" icon
         self.setStyleSheet("""
             QDialog {
                 background-color: white;
@@ -44,7 +47,8 @@ class ReminderDialog(QDialog):
         """)
 
         layout = QVBoxLayout()
-        label = QLabel("Important: Have you submitted your timesheet today?")
+        label = QLabel("Have you submitted your timesheet today?")
+        label.setAlignment(Qt.AlignCenter)
         layout.addWidget(label)
 
         button_layout = QHBoxLayout()
@@ -58,6 +62,7 @@ class ReminderDialog(QDialog):
 
         yes_button.clicked.connect(self.accept)
         no_button.clicked.connect(self.reject)
+        self.setGeometry(1450, 220, 400, 100)
 
 class ChatbotApp(QWidget):
     def __init__(self):
@@ -130,10 +135,10 @@ class ChatbotApp(QWidget):
         self.layout.addWidget(self.separator)
 
         self.input_layout = QHBoxLayout()
-        self.input_layout.setContentsMargins(10, 10, 10, 10)
+        self.input_layout.setContentsMargins(5, 5, 5, 5)
 
         self.input_box = QTextEdit(self)
-        self.input_box.setPlaceholderText("Type your questions here ...")
+        self.input_box.setPlaceholderText("Type your query here ...")
         self.input_box.setStyleSheet("""
             QTextEdit {
                 color: black;
@@ -141,8 +146,8 @@ class ChatbotApp(QWidget):
                 border-radius: 5px;
                 font-family: Arial;
                 font-size: 18px;
-                padding: 10px;
-                max-height: 60px; /* Limit height to 3 lines */
+                padding: 5px;
+                max-height: 55px; /* Limit height to 3 lines */
             }
         """)
         self.input_box.setFixedHeight(55)
@@ -152,14 +157,14 @@ class ChatbotApp(QWidget):
         self.send_button = QPushButton('', self)
         send_icon = QIcon(os.path.join('app', 'icons', 'send.png'))  # Ensure you have an appropriate send icon
         self.send_button.setIcon(send_icon)
-        self.send_button.setIconSize(QSize(45, 45))  # Make send icon larger/smaller
+        self.send_button.setIconSize(QSize(35, 35))  # Make send icon larger/smaller
         self.send_button.clicked.connect(self.send_message)
         self.send_button.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
                 border: none;
-                margin-left: 11px;
-                margin-bottom: 8px;
+                margin-left: 5px;
+                margin-bottom: 12px;
             }
         """)
         self.send_button.setCursor(Qt.PointingHandCursor)
