@@ -18,14 +18,18 @@ def analyze_sentiment(text):
     blob = TextBlob(text)
     return blob.sentiment
 
-def get_word_embeddings(doc):
-    return {token.text: token.vector for token in doc}
-
 def process_input(user_input):
     try:
-         # Perform NLP processing
+        # Perform NLP processing
         doc = nlp(user_input)
-        return get_response(user_input);
+        entities = get_entities(doc)
+        pos_tags = get_pos_tags(doc)
+        dependencies = get_dependencies(doc)
+        sentiment = analyze_sentiment(user_input)
+        
+        # Optionally, log or process these details further
+        
+        #return get_response(user_input)
     
     except Exception as e:
         print(f"Error processing input: {e}")

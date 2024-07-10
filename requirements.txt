@@ -1,7 +1,10 @@
 spacy
 pyqt5
-pandas
-openpyxl
 psutil
 pyttsx3
 textblob
+pandas
+pymongo
+chatterbot
+chatterbot_corpus
+openpyxl
