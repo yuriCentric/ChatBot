@@ -8,3 +8,4 @@ pymongo
 chatterbot
 chatterbot_corpus
 openpyxl
+scikit-learn
