@@ -22,7 +22,10 @@ def get_response(user_input):
     elif all(keyword in user_input for keyword in ['how', 'long', 'certification']) or all(keyword in user_input for keyword in ['how', 'time', 'certification']):
         response += "All requests will be processed within thirty (30) days of the form submission date. "
     elif all(keyword in user_input for keyword in ['how', 'notified', 'approval', 'certification']) or all(keyword in user_input for keyword in ['how', 'notified', 'denial', 'certification']):
-        response += "An HR representative will send an email confirmation to the associate upon approval. In case of denial, an email with an explanation for denial will be sent. Denials may be appealed through the HR representative. "
+
+        response +=  "An HR representative will send an email confirmation to the associate upon approval. In case of denial, an email with an explanation for denial will be sent. Denials may be appealed through the HR representative. "
+    elif all(keyword in user_input for keyword in ['process', 'approval', 'courses']) or all(keyword in user_input for keyword in ['process', 'approval', 'subscriptions']):
+        response +=  "Associates must get courses and subscriptions approved by their Practice Leads before commencement. Post-approval, associates can make the purchase. Reimbursement can be claimed via Open Air upon completion, providing proof of completion and approval emails. "
 
     # Catch-all response
     if response == "":
