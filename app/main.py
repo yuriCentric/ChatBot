@@ -13,6 +13,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import pandas as pd
+from textblob import TextBlob
 from celebrations import get_today_birthdays, get_today_anniversaries  # Import the celebration logic
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -29,14 +30,14 @@ def find_best_match(user_input):
         print('No documents found in the collection.')
         return 'Sorry, I could not find a suitable answer.'
 
-    inputs = [doc.get('input', '').strip() for doc in documents]
+    inputs = [doc.get('input', '') for doc in documents]
     responses = [doc.get('response', '') for doc in documents]
 
-    # Filter out empty inputs
-    non_empty_inputs = [(input_text, response) for input_text, response in zip(inputs, responses) if input_text]
+    # Filter out non-string inputs
+    non_empty_inputs = [(input_text.strip(), response) for input_text, response in zip(inputs, responses) if isinstance(input_text, str) and input_text.strip()]
 
     if not non_empty_inputs:
-        print('All inputs are empty.')
+        print('All inputs are empty or invalid.')
         return 'Sorry, I could not find a suitable answer.'
 
     inputs, responses = zip(*non_empty_inputs)
@@ -99,8 +100,14 @@ class ChatbotApp(QWidget):
         self.title.setStyleSheet("color: #A6A6A6; background-color: #f2f2f2; padding: 20px; border-radius: 10px;")
         self.layout.addWidget(self.title)
 
-        # Add icons for birthday, anniversary, and clear chat
+        # Add icons for Centric logo, birthday, anniversary, and clear chat
         self.icons_layout = QHBoxLayout()
+
+        self.logo_icon = QLabel(self)
+        self.logo_icon.setPixmap(QPixmap(os.path.join('app', 'icons', 'logo.png')).scaled(130, 130, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.icons_layout.addWidget(self.logo_icon)
+
+        self.icons_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
         self.cake_icon = QLabel(self)
         self.cake_icon.setPixmap(QPixmap(os.path.join('app', 'icons', 'bday.png')).scaled(35, 35, Qt.KeepAspectRatio, Qt.SmoothTransformation))
@@ -120,7 +127,7 @@ class ChatbotApp(QWidget):
         self.icons_layout.addWidget(self.clear_icon)
 
         self.layout.addLayout(self.icons_layout)
-        self.layout.setAlignment(self.icons_layout, Qt.AlignRight)
+        self.layout.setAlignment(self.icons_layout, Qt.AlignTop)
 
         self.new_chat_image = QLabel(self)
         self.new_chat_image.setPixmap(QPixmap(os.path.join('app', 'icons', 'newchat.png')))
@@ -224,21 +231,16 @@ class ChatbotApp(QWidget):
 
     def move_to_bottom_right(self):
         screen_geometry = QDesktopWidget().availableGeometry()
-        self.move(screen_geometry.width() - self.width() - 5, screen_geometry.height() - self.height() - 50)    
+        self.move(screen_geometry.width() - self.width() - 15, screen_geometry.height() - self.height() - 100)    
 
     def send_message(self):
         user_input = self.input_box.toPlainText().strip()
         if user_input:
+            corrected_input = str(TextBlob(user_input).correct())
             self.new_chat_image.hide()
             timestamp = datetime.now().strftime('%I:%M %p')
-            self.append_message(user_input, timestamp, align_right=True)
-            # if hasattr(self, 'umx_questions') and self.umx_step < len(self.umx_questions):
-            #     self.handle_umx_response(user_input)
-            # else:
-            #     if user_input.lower() == "write a umx":
-            #         self.start_umx_process()
-            #     else:
-            response = find_best_match(user_input)
+            self.append_message(user_input, timestamp, align_right=True)  # Show original user input
+            response = find_best_match(corrected_input)  # Use corrected input for matching
             self.append_message(response, timestamp, align_right=False)
             self.input_box.clear()
 
@@ -268,9 +270,9 @@ class ChatbotApp(QWidget):
         bot_style = """
             <div style="display: flex; align-items: center; margin-bottom: 10px;">
                 <img src='app/icons/chat.png' width='30' height='30' style="margin-right: 10px; border-radius: 50%;" />
-                <div style="background-color: #1A73E8; color: white; padding: 10px; border-radius: 15px; max-width: 75%; word-wrap: break-word;">
+                <div style="background-color: lightgray; color: black; padding: 10px; border-radius: 15px; max-width: 75%; word-wrap: break-word;">
                     <div>{message}</div>
-                    <div style="font-size: 12px; color: gray; text-align: left; margin-top: 5px;">{timestamp}</div>
+                    <div style="font-size: 14px; color: gray; text-align: left; margin-top: 5px;">{timestamp}</div>
                 </div>
             </div>
         """
@@ -331,7 +333,7 @@ class ChatbotApp(QWidget):
     #     else:
     #         self.append_message("UMX submission cancelled.", datetime.now().strftime('%I:%M %p'), align_right=False)
     #         if self.umx_form:
-    #             self.umx_form.close()
+    #             self.umx_form close()
 
     def clear_chat(self, event):
         self.chat_display.clear()
