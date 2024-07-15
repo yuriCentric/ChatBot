@@ -15,7 +15,12 @@ def get_today_birthdays(excel_path):
     if birthdays_today.empty:
         return "No birthdays today."
     else:
-        return "Today's Birthdays:\n" + "\n".join(birthdays_today['Employee Name'].tolist())
+        birthday_messages = []
+        for _, row in birthdays_today.iterrows():
+            email = row['Email']
+            name = row['Employee Name']
+            birthday_messages.append(f'<a href="mailto:{email}">{name}</a>')
+        return "Today's Birthdays:<br>" + "<br>".join(birthday_messages)
 
 def get_today_anniversaries(excel_path):
     # Load the Excel file
@@ -34,5 +39,7 @@ def get_today_anniversaries(excel_path):
         anniversary_messages = []
         for _, row in anniversaries_today.iterrows():
             years = today.year - row['DOJ'].year
-            anniversary_messages.append(f"{row['Employee Name']} {years}yrs anniversary")
-        return "Today's Anniversaries:\n" + "\n".join(anniversary_messages)
+            email = row['Email']
+            name = row['Employee Name']
+            anniversary_messages.append(f'<a href="mailto:{email}">{name} {years}yrs anniversary</a>')
+        return "Today's Anniversaries:<br>" + "<br>".join(anniversary_messages)

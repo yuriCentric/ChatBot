@@ -103,17 +103,17 @@ class ChatbotApp(QWidget):
         self.icons_layout = QHBoxLayout()
 
         self.cake_icon = QLabel(self)
-        self.cake_icon.setPixmap(QPixmap(os.path.join('app', 'icons', 'bday.png')).scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.cake_icon.setPixmap(QPixmap(os.path.join('app', 'icons', 'bday.png')).scaled(35, 35, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.cake_icon.setToolTip(self.get_birthday_tooltip())
         self.icons_layout.addWidget(self.cake_icon)
 
         self.anniversary_icon = QLabel(self)
-        self.anniversary_icon.setPixmap(QPixmap(os.path.join('app', 'icons', 'anv.png')).scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.anniversary_icon.setPixmap(QPixmap(os.path.join('app', 'icons', 'anv.png')).scaled(35, 35, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.anniversary_icon.setToolTip(self.get_anniversary_tooltip())
         self.icons_layout.addWidget(self.anniversary_icon)
 
         self.clear_icon = QLabel(self)
-        self.clear_icon.setPixmap(QPixmap(os.path.join('app', 'icons', 'clear.png')).scaled(30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.clear_icon.setPixmap(QPixmap(os.path.join('app', 'icons', 'clear.png')).scaled(35, 35, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.clear_icon.setCursor(Qt.PointingHandCursor)
         self.clear_icon.setToolTip('Clear Chat')
         self.clear_icon.mousePressEvent = self.clear_chat
