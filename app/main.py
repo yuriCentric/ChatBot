@@ -13,7 +13,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import pandas as pd
-from textblob import TextBlob
 from celebrations import get_today_birthdays, get_today_anniversaries  # Import the celebration logic
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -236,11 +235,10 @@ class ChatbotApp(QWidget):
     def send_message(self):
         user_input = self.input_box.toPlainText().strip()
         if user_input:
-            corrected_input = str(TextBlob(user_input).correct())
             self.new_chat_image.hide()
             timestamp = datetime.now().strftime('%I:%M %p')
-            self.append_message(user_input, timestamp, align_right=True)  # Show original user input
-            response = find_best_match(corrected_input)  # Use corrected input for matching
+            self.append_message(user_input, timestamp, align_right=True)
+            response = find_best_match(user_input)  # Use original user input for matching
             self.append_message(response, timestamp, align_right=False)
             self.input_box.clear()
 
@@ -260,7 +258,7 @@ class ChatbotApp(QWidget):
 
         user_style = """
             <div style="display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 10px;">
-                <div style="background-color: #E8E8E8; color: black; padding: 10px 15px; border-radius: 15px; max-width: 75%; word-wrap: break-word;">
+                <div style="background-color: #E8E8E8; color: black; padding: 10px; border-radius: 15px; max-width: 75%; word-wrap: break-word;">
                 {message}
                 </div>
                 <div style="font-size: 14px; color: gray; text-align: right; margin-top: 5px;">{timestamp}</div>
@@ -268,9 +266,9 @@ class ChatbotApp(QWidget):
         """
         
         bot_style = """
-            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+            <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 10px;">
                 <img src='app/icons/chat.png' width='30' height='30' style="margin-right: 10px; border-radius: 50%;" />
-                <div style="background-color: lightgray; color: black; padding: 10px; border-radius: 15px; max-width: 75%; word-wrap: break-word;">
+                <div style="background-color: #D7EEF9; color: black; padding: 10px; border-radius: 15px; max-width: 75%; word-wrap: break-word;">
                     <div>{message}</div>
                     <div style="font-size: 14px; color: gray; text-align: left; margin-top: 5px;">{timestamp}</div>
                 </div>
@@ -281,59 +279,6 @@ class ChatbotApp(QWidget):
 
         self.chat_display.insertHtml(formatted_message)
         self.chat_display.ensureCursorVisible()
-
-    # def start_umx_process(self):
-    #     self.umx_details = {}
-    #     self.umx_step = 0
-    #     self.umx_form = UMXFormAutomation()
-    #     self.umx_questions = [
-    #         "Who is this for client/employee?",
-    #         "Who is this Unmatched Minute about? Please include first and last names (or 'yourself', if applicable)",
-    #         "Tell us what you or someone else did that was unmatched:",
-    #         "How would you categorize the action?",
-    #         "Your Operating Group:",
-    #         "Your Department"
-    #     ]
-    #     self.ask_next_question()
-
-    # def ask_next_question(self):
-    #     if self.umx_step < len(self.umx_questions):
-    #         question = self.umx_questions[self.umx_step]
-    #         self.append_message(question, datetime.now().strftime('%I:%M %p'), align_right=False)
-    #     else:
-    #         self.append_message("Confirm submission (yes/no)?", datetime.now().strftime('%I:%M %p'), align_right=False)
-
-    # def handle_umx_response(self, user_input):
-    #     if self.umx_step < len(self.umx_questions):
-    #         question = self.umx_questions[self.umx_step]
-    #         self.umx_details[question] = user_input
-
-    #         success = False
-    #         if self.umx_step == 0:
-    #             success = self.umx_form.select_role(user_input)
-    #         elif self.umx_step == 1:
-    #             success = self.umx_form.enter_name(user_input)
-    #         elif self.umx_step == 2:
-    #             success = self.umx_form.enter_description(user_input)
-    #         elif self.umx_step == 3:
-    #             success = self.umx_form.select_category(user_input)
-
-    #         if success:
-    #             self.umx_step += 1
-    #             self.ask_next_question()
-    #         else:
-    #             self.append_message(f"Error processing '{question}'. Please try again.", datetime.now().strftime('%I:%M %p'), align_right=False)
-    #     elif user_input.lower() == "yes":
-    #         success = self.umx_form.submit_form()
-    #         if success:
-    #             self.append_message("UMX submitted successfully.", datetime.now().strftime('%I:%M %p'), align_right=False)
-    #             self.umx_form.close()
-    #         else:
-    #             self.append_message("Error submitting UMX. Please try again.", datetime.now().strftime('%I:%M %p'), align_right=False)
-    #     else:
-    #         self.append_message("UMX submission cancelled.", datetime.now().strftime('%I:%M %p'), align_right=False)
-    #         if self.umx_form:
-    #             self.umx_form close()
 
     def clear_chat(self, event):
         self.chat_display.clear()
