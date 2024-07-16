@@ -308,11 +308,11 @@ class ChatbotApp(QWidget):
             self.append_message(reminder_message, datetime.now().strftime('%I:%M %p'), align_right=False)
 
     def get_birthday_tooltip(self):
-        excel_path = "C:/Users/sagar.patel/OneDrive - Centric Consulting/Documents/GitHub/ChatBot/app/sqa.xlsx"
+        excel_path = os.path.join('app', 'sqa.xlsx')
         return get_today_birthdays(excel_path)
 
     def get_anniversary_tooltip(self):
-        excel_path = "C:/Users/sagar.patel/OneDrive - Centric Consulting/Documents/GitHub/ChatBot/app/sqa.xlsx"
+        excel_path = os.path.join('app', 'sqa.xlsx')
         return get_today_anniversaries(excel_path)
 
 class MainApp(QWidget):
