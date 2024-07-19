@@ -1,7 +1,7 @@
 import requests
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QSpacerItem, QSizePolicy, QDesktopWidget, QToolTip
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QSpacerItem, QSizePolicy, QDesktopWidget, QDialog, QScrollArea
 from PyQt5.QtCore import Qt, QEvent, QTimer, QSize
-from PyQt5.QtGui import QFont, QIcon, QTextCursor, QTextBlockFormat, QPixmap, QMovie
+from PyQt5.QtGui import QFont, QIcon, QTextCursor, QTextBlockFormat, QPixmap, QMovie, QImage
 import sys
 import getpass
 import os
@@ -13,7 +13,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import pandas as pd
-from celebrations import get_today_birthdays, get_today_anniversaries  # Import the celebration logic
+import webbrowser
+import fitz  # PyMuPDF
+from celebrations import get_today_birthdays, get_today_anniversaries, get_email_by_name  # Import the celebration logic
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -29,6 +31,32 @@ def find_best_match(user_input):
         print('No documents found in the collection.')
         return 'Sorry, I could not find a suitable answer.'
 
+    if user_input.startswith("send birthday wishes to "):
+        name = user_input[len("send birthday wishes to "):].strip()
+        excel_path = os.path.join('app', 'sqa.xlsx')
+        email = get_email_by_name(excel_path, name)
+        if email:
+            subject = "Happy Birthday!!"
+            body = (
+                        "Wishing you a very Happy Birthday!\n\n"
+                        "\n\n May your special day be filled with joy, laughter, and wonderful moments. "
+                    )
+
+            return draft_email(email, subject, body)
+        else:
+            return f"Could not find email for {name}."
+
+    if user_input.startswith("send anniversary wishes to "):
+        name = user_input[len("send anniversary wishes to "):].strip()
+        excel_path = os.path.join('app', 'sqa.xlsx')
+        email = get_email_by_name(excel_path, name)
+        if email:
+            subject = "Happy Anniversary!!"
+            body = "Congratulations on your Work Anniversary!"
+            return draft_email(email, subject, body)
+        else:
+            return f"Could not find email for {name}."
+
     inputs = [doc.get('input', '') for doc in documents]
     responses = [doc.get('response', '') for doc in documents]
 
@@ -37,7 +65,7 @@ def find_best_match(user_input):
 
     if not non_empty_inputs:
         print('All inputs are empty or invalid.')
-        return 'Sorry, I could not find a suitable answer.'
+        return 'Sorry, I am unable to understand and could not find a suitable answer for you. Try reframing your question. '
 
     inputs, responses = zip(*non_empty_inputs)
 
@@ -72,7 +100,49 @@ def find_best_match(user_input):
     if highest_similarity > threshold:
         return responses[best_match_index]
     else:
-        return 'Sorry, I could not find a suitable answer.'
+        return 'Sorry, I am unable to understand and could not find a suitable answer for you. Try reframing your question.'
+
+def draft_email(recipient_email, subject, body):
+    mailto_link = f"mailto:{recipient_email}?subject={subject}&body={body}"
+    try:
+        webbrowser.open(mailto_link)
+        return "Email draft triggered successfully."
+    except Exception as e:
+        return f"Failed to trigger email draft: {str(e)}"
+
+class ReadmeDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Readme")
+        self.resize(600, 800)
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        self.scroll_area = QScrollArea(self)
+        self.scroll_area.setWidgetResizable(True)
+        self.layout.addWidget(self.scroll_area)
+
+        self.scroll_content = QWidget(self.scroll_area)
+        self.scroll_layout = QVBoxLayout(self.scroll_content)
+        self.scroll_area.setWidget(self.scroll_content)
+
+        self.load_pdf(os.path.join('app', 'readme.pdf'))
+
+    def load_pdf(self, pdf_path):
+        try:
+            doc = fitz.open(pdf_path)
+            for page_num in range(len(doc)):
+                page = doc.load_page(page_num)
+                pix = page.get_pixmap()
+                qt_image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
+
+                label = QLabel(self.scroll_content)
+                label.setPixmap(QPixmap.fromImage(qt_image))
+                self.scroll_layout.addWidget(label)
+
+            self.scroll_layout.addStretch()
+        except Exception as e:
+            print(f"Error loading PDF: {e}")
 
 class ChatbotApp(QWidget):
     def __init__(self):
@@ -99,7 +169,7 @@ class ChatbotApp(QWidget):
         self.title.setStyleSheet("color: #A6A6A6; background-color: #f2f2f2; padding: 20px; border-radius: 10px;")
         self.layout.addWidget(self.title)
 
-        # Add icons for Centric logo, birthday, anniversary, and clear chat
+        # Add icons for Centric logo, birthday, anniversary, clear chat, and help
         self.icons_layout = QHBoxLayout()
 
         self.logo_icon = QLabel(self)
@@ -125,6 +195,13 @@ class ChatbotApp(QWidget):
         self.clear_icon.mousePressEvent = self.clear_chat
         self.icons_layout.addWidget(self.clear_icon)
 
+        self.help_icon = QLabel(self)
+        self.help_icon.setPixmap(QPixmap(os.path.join('app', 'icons', 'help.png')).scaled(35, 35, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.help_icon.setCursor(Qt.PointingHandCursor)
+        self.help_icon.setToolTip('Help')
+        self.help_icon.mousePressEvent = self.open_readme
+        self.icons_layout.addWidget(self.help_icon)
+
         self.layout.addLayout(self.icons_layout)
         self.layout.setAlignment(self.icons_layout, Qt.AlignTop)
 
@@ -137,21 +214,11 @@ class ChatbotApp(QWidget):
         self.chat_display = QTextEdit(self)
         self.chat_display.setReadOnly(True)
         self.chat_display.setStyleSheet("""
-            QTextEdit .test{
+            QTextEdit {
                 color: black;
                 background-color: white;
                 border-radius: 5px;
                 padding: 5px;
-                }
-            QTextBrowser {
-                color: black;
-                background-color: white;
-                border-radius: 5px;
-                padding: 5px;
-                font-family: Arial;
-                font-size: 18px;
-                margin-top: 0px;
-                margin-bottom: 0px;
             }
             QScrollBar:vertical {
                 border: none;
@@ -166,14 +233,14 @@ class ChatbotApp(QWidget):
             }
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
                 border: none;
-                background: none.
+                background: none;
             }
             QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
                 background: none;
                 color: #333;
             }
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-                background: none.
+                background: none;
             }
         """)
         self.layout.addWidget(self.chat_display)
@@ -196,7 +263,7 @@ class ChatbotApp(QWidget):
                 font-family: Arial;
                 font-size: 18px;
                 padding: 5px;
-                max-height: 55px.
+                max-height: 55px;
             }
         """)
         self.input_box.setFixedHeight(55)
@@ -214,7 +281,7 @@ class ChatbotApp(QWidget):
                 background-color: transparent;
                 border: none;
                 margin-left: 5px;
-                margin-bottom: 12px.
+                margin-bottom: 12px;
             }
         """)
         self.send_button.setCursor(Qt.PointingHandCursor)
@@ -230,7 +297,7 @@ class ChatbotApp(QWidget):
 
     def move_to_bottom_right(self):
         screen_geometry = QDesktopWidget().availableGeometry()
-        self.move(screen_geometry.width() - self.width() - 15, screen_geometry.height() - self.height() - 100)    
+        self.move(screen_geometry.width() - self.width() - 15, screen_geometry.height() - self.height() - 100)
 
     def send_message(self):
         user_input = self.input_box.toPlainText().strip()
@@ -314,6 +381,10 @@ class ChatbotApp(QWidget):
     def get_anniversary_tooltip(self):
         excel_path = os.path.join('app', 'sqa.xlsx')
         return get_today_anniversaries(excel_path)
+
+    def open_readme(self, event):
+        self.readme_dialog = ReadmeDialog()
+        self.readme_dialog.exec_()
 
 class MainApp(QWidget):
     def __init__(self):

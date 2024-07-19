@@ -33,11 +33,23 @@ def get_today_anniversaries(excel_path):
     anniversaries_today = anniversaries_today[anniversaries_today['DOJ'].dt.day == today.day]
 
     if anniversaries_today.empty:
-        return "No anniversaries today."
+        return "No work anniversaries today."
     else:
         anniversary_messages = []
         for _, row in anniversaries_today.iterrows():
             years = today.year - row['DOJ'].year
             name = row['Employee Name']
             anniversary_messages.append(f'{name} {years}yrs anniversary')
-        return "Today's Anniversaries:\n" + "\n".join(anniversary_messages)
+        return "Today's Work Anniversaries:\n" + "\n".join(anniversary_messages)
+
+def get_email_by_name(excel_path, name):
+    # Load the Excel file
+    df = pd.read_excel(excel_path)
+
+    # Find the email by name
+    person = df[df['Employee Name'].str.contains(name, case=False, na=False)]
+
+    if not person.empty:
+        return person['Email'].values[0]
+    else:
+        return None
