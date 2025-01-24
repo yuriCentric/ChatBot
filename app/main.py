@@ -1,12 +1,12 @@
 import requests
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QLabel, QSpacerItem, QSizePolicy, QDesktopWidget, QDialog, QScrollArea
-from PyQt5.QtCore import Qt, QEvent, QTimer, QSize
+from PyQt5.QtCore import Qt, QEvent, QTimer, QSize, QPropertyAnimation, QEasingCurve, QRect, QThread, pyqtSignal
 from PyQt5.QtGui import QFont, QIcon, QTextCursor, QTextBlockFormat, QPixmap, QMovie, QImage
 import sys
 import getpass
 import os
 from datetime import datetime
-from pymongo import MongoClient
+from pymongo import MongoClient, UpdateOne
 from config import MONGO_URI, DB_NAME, COLLECTION_NAME
 from alerts import BatteryAlert, check_reminder_time
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -15,7 +15,9 @@ import numpy as np
 import pandas as pd
 import webbrowser
 import fitz  # PyMuPDF
+import speech_recognition as sr
 from celebrations import get_today_birthdays, get_today_anniversaries, get_email_by_name  # Import the celebration logic
+from ci_buddy_introduction import play_introduction, get_introduction_text, stop_introduction
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -31,6 +33,15 @@ def find_best_match(user_input):
         print('No documents found in the collection.')
         return 'Sorry, I could not find a suitable answer.'
 
+    if user_input.lower() == 'help':
+        return 'Help command received.'
+
+    if user_input.lower() == 'clear':
+        return 'Clear command received.'
+
+    if user_input.lower() == "ci-buddy introduce yourself":
+        return 'ci-buddy introduce yourself'  # Return a special response to trigger the icon display
+
     if user_input.startswith("send birthday wishes to "):
         name = user_input[len("send birthday wishes to "):].strip()
         excel_path = os.path.join('app', 'sqa.xlsx')
@@ -38,10 +49,9 @@ def find_best_match(user_input):
         if email:
             subject = "Happy Birthday!!"
             body = (
-                        "Wishing you a very Happy Birthday!\n\n"
-                        "\n\n May your special day be filled with joy, laughter, and wonderful moments. "
-                    )
-
+                "Wishing you a very Happy Birthday!\n\n"
+                "\n\n May your special day be filled with joy, laughter, and wonderful moments. "
+            )
             return draft_email(email, subject, body)
         else:
             return f"Could not find email for {name}."
@@ -51,7 +61,7 @@ def find_best_match(user_input):
         excel_path = os.path.join('app', 'sqa.xlsx')
         email = get_email_by_name(excel_path, name)
         if email:
-            subject = "Happy Anniversary!!"
+            subject = "Happy Work Anniversary!!"
             body = "Congratulations on your Work Anniversary!"
             return draft_email(email, subject, body)
         else:
@@ -98,7 +108,7 @@ def find_best_match(user_input):
     threshold = 0.4
 
     if highest_similarity > threshold:
-        return responses[best_match_index]
+        return str(responses[best_match_index])
     else:
         return 'Sorry, I am unable to understand and could not find a suitable answer for you. Try reframing your question.'
 
@@ -148,10 +158,6 @@ class ChatbotApp(QWidget):
     def __init__(self):
         super().__init__()
 
-        # Add a new attribute to store UMX details
-        self.umx_details = {}
-        self.umx_form = None
-        
         username = getpass.getuser()
         self.user_first_name = username.split('.')[0].capitalize()
 
@@ -163,13 +169,13 @@ class ChatbotApp(QWidget):
         self.move_to_bottom_right()
         self.layout = QVBoxLayout()
 
-        self.title = QLabel('Hi, I am your Centric Buddy')
+        self.title = QLabel('Hi, I am your Centric India Buddy')
         self.title.setAlignment(Qt.AlignCenter)
         self.title.setFont(QFont('Arial', 20, QFont.Bold))
         self.title.setStyleSheet("color: #A6A6A6; background-color: #f2f2f2; padding: 20px; border-radius: 10px;")
         self.layout.addWidget(self.title)
 
-        # Add icons for Centric logo, birthday, anniversary, clear chat, and help
+        # Add icons for Centric logo, birthday, anniversary, clear chat, help, and voice command
         self.icons_layout = QHBoxLayout()
 
         self.logo_icon = QLabel(self)
@@ -240,7 +246,7 @@ class ChatbotApp(QWidget):
                 color: #333;
             }
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-                background: none;
+                background: none.
             }
         """)
         self.layout.addWidget(self.chat_display)
@@ -263,7 +269,7 @@ class ChatbotApp(QWidget):
                 font-family: Arial;
                 font-size: 18px;
                 padding: 5px;
-                max-height: 55px;
+                max-height: 55px.
             }
         """)
         self.input_box.setFixedHeight(55)
@@ -281,19 +287,39 @@ class ChatbotApp(QWidget):
                 background-color: transparent;
                 border: none;
                 margin-left: 5px;
-                margin-bottom: 12px;
+                margin-bottom: 12px.
             }
         """)
         self.send_button.setCursor(Qt.PointingHandCursor)
 
+        self.voice_button = QPushButton('', self)
+        voice_icon = QIcon(os.path.join('app', 'icons', 'voice.png'))
+        self.voice_button.setIcon(voice_icon)
+        self.voice_button.setIconSize(QSize(40, 40))
+        self.voice_button.setToolTip('Voice Command')
+        self.voice_button.clicked.connect(self.start_voice_recognition)
+        self.voice_button.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: none.
+                margin-left: 5px;
+                margin-bottom: 12px.
+            }
+        """)
+        self.voice_button.setCursor(Qt.PointingHandCursor)
+
         self.input_layout.addWidget(self.input_box)
         self.input_layout.addWidget(self.send_button, alignment=Qt.AlignBottom)
+        self.input_layout.addWidget(self.voice_button, alignment=Qt.AlignBottom)
 
         self.layout.addLayout(self.input_layout)
         self.setLayout(self.layout)
 
         self.init_battery_check()
         self.init_reminder_popup()
+
+        # Initialize the voiceplay gif
+        self.init_voiceplay_gif()
 
     def move_to_bottom_right(self):
         screen_geometry = QDesktopWidget().availableGeometry()
@@ -304,10 +330,23 @@ class ChatbotApp(QWidget):
         if user_input:
             self.new_chat_image.hide()
             timestamp = datetime.now().strftime('%I:%M %p')
-            self.append_message(user_input, timestamp, align_right=True)
-            response = find_best_match(user_input)  # Use original user input for matching
-            self.append_message(response, timestamp, align_right=False)
-            self.input_box.clear()
+            if user_input.lower() == 'help':
+                self.open_readme(None)
+            elif user_input.lower() == 'clear':
+                self.clear_chat(None)
+            else:
+                self.append_message(user_input, timestamp, align_right=True)
+                response = find_best_match(user_input)  # Use original user input for matching
+                if response == 'ci-buddy introduce yourself':
+                    self.show_voiceplay_icon()
+                    play_introduction()  # Play the introduction text as a voice alert
+                elif isinstance(response, str):
+                    self.append_message(response, timestamp, align_right=False)
+                    if response.lower().startswith('http'):
+                        webbrowser.open(response)
+                else:
+                    self.append_message("Sorry, there was an error processing your request.", timestamp, align_right=False)
+                self.input_box.clear()
 
     def append_message(self, message, timestamp, align_right=False):
         try:
@@ -385,6 +424,52 @@ class ChatbotApp(QWidget):
     def open_readme(self, event):
         self.readme_dialog = ReadmeDialog()
         self.readme_dialog.exec_()
+
+    def start_voice_recognition(self):
+        recognizer = sr.Recognizer()
+        with sr.Microphone() as source:
+            print("Listening...")
+            audio = recognizer.listen(source)
+
+        try:
+            print("Recognizing...")
+            query = recognizer.recognize_google(audio, language='en-US')
+            print(f"User said: {query}")
+            self.input_box.setText(query)
+            self.send_message()
+        except Exception as e:
+            print(f"Could not understand audio: {e}")
+            self.append_message("Sorry, I could not understand your voice.", datetime.now().strftime('%I:%M %p'), align_right=False)
+
+    def init_voiceplay_gif(self):
+        self.voiceplay_gif_label = QLabel(self)
+        self.voiceplay_gif_label.setStyleSheet("background-color: rgba(0, 0, 0, 128); border-radius: 10px;")
+        self.voiceplay_gif_label.setAlignment(Qt.AlignCenter)
+        self.voiceplay_gif = QMovie(os.path.join('app', 'icons', 'voiceplay.gif'))
+        self.voiceplay_gif_label.setMovie(self.voiceplay_gif)
+        self.voiceplay_gif_label.setVisible(False)
+        self.layout.addWidget(self.voiceplay_gif_label)
+
+    def show_voiceplay_icon(self):
+        cursor = self.chat_display.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        block_format = QTextBlockFormat()
+        block_format.setAlignment(Qt.AlignLeft)
+        cursor.insertBlock(block_format)
+        cursor.insertHtml("""
+            <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 10px;">
+                <img src='app/icons/voiceplay.gif' width='150' height='150' style="cursor: pointer;" onclick="window.toggle_voiceplay_gif();" />
+            </div>
+        """)
+        self.chat_display.ensureCursorVisible()
+
+    def toggle_voiceplay_gif(self, event=None):
+        if self.voiceplay_gif.state() == QMovie.Running:
+            self.voiceplay_gif.setPaused(True)
+            stop_introduction()
+        else:
+            self.voiceplay_gif.setPaused(False)
+            play_introduction()
 
 class MainApp(QWidget):
     def __init__(self):

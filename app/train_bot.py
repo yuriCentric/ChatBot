@@ -1,4 +1,15 @@
-from pymongo import MongoClient, UpdateOne
+import sys
+print("Python executable:", sys.executable)
+print("Python version:", sys.version)
+print("sys.path:", sys.path)
+
+try:
+    from pymongo import MongoClient, UpdateOne
+    print("pymongo is installed correctly.")
+except ModuleNotFoundError:
+    print("pymongo is not installed.")
+    sys.exit(1)
+
 from chatterbot import ChatBot
 from chatterbot.trainers import ListTrainer
 import pandas as pd
@@ -49,5 +60,5 @@ if __name__ == "__main__":
     insert_data_to_mongodb(EXCEL_FILE_PATH, DB_NAME, COLLECTION_NAME, MONGO_URI)
     bot = train_bot_from_mongodb(DB_NAME, COLLECTION_NAME, MONGO_URI)
 
-    response = bot.get_response()
-
+    response = bot.get_response("Your query here")
+    print(response)

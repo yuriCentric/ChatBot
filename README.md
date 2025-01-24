@@ -24,3 +24,8 @@ pip install -r requirements.txt
 
 cd ChatBot/app
 python main.py
+____________________________
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned 
+-Scope Process
+env\Scripts\activate
+"c:/Users/sagar.patel/OneDrive - Centric Consulting/Documents/GitHub/ChatBot/env/Scripts/python.exe" "c:/Users/sagar.patel/OneDrive - Centric Consulting/Documents/GitHub/ChatBot/app/main.py"
